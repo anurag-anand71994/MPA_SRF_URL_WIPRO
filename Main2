@@ -1,0 +1,278 @@
+package animesh;
+
+import org.sikuli.script.*;
+
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Scanner;
+
+import javax.imageio.ImageIO;
+
+public class Main2 {
+	private static CustomLog c;
+	public static String operationName = "";
+	public static String userid = "", password = "", domain = "";
+	//public static String[] url = {"https://g1w5779-008.austin.hp.com/arc/services","g4t1778g.houston.hp.com","g4t1779g.houston.hp.com","g4t1780g.houston.hp.com","g4t1781g.houston.hp.com","g9t1285g.houston.hp.com","g9t1286g.houston.hp.com","g9t1287g.houston.hp.com","g9t1288g.houston.hp.com"};
+	//************************************************************************************
+	public static String[] url;
+	//******************************************************************************************************
+	public static Map<String, String> params = new HashMap();
+	public static int len = 0;
+	@SuppressWarnings("finally")
+	public static void main(String[] args) throws Exception
+	{
+		//***********************************************************my addition
+				Scanner scan = new Scanner(new File("C:/eclipse workspace/textfilereader/src/Textfilereader/a.txt"));
+				String b="";
+				
+				int l;
+				while(scan.hasNextLine()){
+			    b+= scan.nextLine();
+			    }
+				scan.close();
+				url=b.split(",");
+				l=url.length;
+	   //**************************************************************
+		for(int i=0; i<args.length; i++)
+		{
+			String paramName = "";
+			if(i==0)
+			{
+				paramName = "UserID";
+				userid = args[i];
+			}
+			else if(i==1)
+			{
+				paramName = "Password";
+				password = args[i];
+			}
+			else if(i==2)
+			{
+				paramName = "Domain";
+				domain = args[i];
+			}
+			else if(i==3)
+			{
+				paramName = "Operation";
+				operationName = args[i];
+			}			
+			else
+				paramName = "param" + (i-3);
+			
+			params.put(paramName, args[i]);
+		}
+		
+		for(String key: params.keySet())
+		{
+			if(key != "Password")
+				NotifyStub.sendPost(key + " = " + params.get(key), "From VM", "info");
+		}
+		
+		//To get password
+		//Crypto.getString(params.get("Password"))
+		
+		//To get 2nd parameter
+		//params.get("param2")
+		
+		//Get contents of Clipboard
+		//String clip = App.getClipboard();
+		
+		
+		c = new CustomLog(Main.class);
+		Screen s = new Screen();
+		
+		//Msg.Show("Clipboard", App.getClipboard()); //Get contents of the clipboard
+		
+		try
+		{
+			NotifyStub.sendPost("Minimising all the windows", "From VM", "Info");
+			s.type("m",Key.WIN);
+			
+			NotifyStub.sendPost("Open Run", "From VM", "Info");
+			s.type("r",Key.WIN);
+			s.wait(new Pattern(GetPath("run.png")).exact(),50);
+			
+			NotifyStub.sendPost("Opening google chrome", "From VM", "Info");
+			s.type("chrome.exe");
+			s.type(Key.ENTER);		
+			
+			NotifyStub.sendPost("Waiting for google chrome to load", "From VM", "Info");
+			s.wait(new Pattern(GetPath("url.png")).exact(),50);	
+			//********************************************************
+			String[] s1={"first","second","third"};
+            //********************************************************
+			len = url.length;
+			NotifyStub.sendPost("length "+len, "From VM", "Info");
+			for(int i = 0; i<=(len-1); i++)
+			{
+				//**************************
+				int c1=0,c2=20;
+				s.type(url[i]+Key.ENTER);
+				re:
+				for(int i1=0;i1<3;i1++)
+				{
+				//*************************
+				//s.type(url[i]+Key.ENTER);
+				
+				NotifyStub.sendPost("Waiting for " + url[i] + " to load", "From VM", "Info");
+				//***************************************************************
+				if(s.exists(new Pattern(GetPath("reload.png")).exact(),c2) != null) 
+			    //***************************************************************
+				{
+					if(s.exists(new Pattern(GetPath("hp.png")).exact())!= null)
+					{
+						url[i] += " - pass";
+					}
+					else
+					{
+						c1=c1+1;
+						url[i] += " - failed after page load in"+s1[c1-1]+" attempt";						
+						String fName1 = new SimpleDateFormat("yyyyMMddhhmmss'.png'").format(new Date());
+						takePictureOfError(url[i] + fName1);
+						Thread.sleep(5000);
+						NotifyStub.sendPost("Saved the error Screenshot in Errors folder as : " + url[i] + fName1, "From VM", "Info");
+					   //******************************
+						url[i] = url[i].replace((" - failed after page load in"+s1[c1-1]+" attempt"),"");
+						
+						if(c1>0 && c1<3){
+							//s.type("t",Key.CTRL);
+							s.type(Key.F5);
+							continue re;
+						}
+					   //********************************
+					}
+				}				
+				else
+				{
+					//**************************
+					c1=c1+1;
+					c2=c2+10;
+					//**************************
+					url[i] += " - response time exceeded given wait time in"+s1[c1-1]+"attempt";
+					String fName2 = new SimpleDateFormat("yyyyMMddhhmmss'.png'").format(new Date());
+					takePictureOfError(url[i] + fName2);
+					Thread.sleep(5000);
+					NotifyStub.sendPost("Saved the error Screenshot in Errors folder as : " + url[i] + fName2, "From VM", "Info");
+					//*****************************
+					url[i] = url[i].replace((" - response time exceeded given wait time in"+s1[c1-1]+"attempt"),"");
+					if(c1>0 && c1<3){
+						//s.type("t",Key.CTRL);
+						s.type(Key.F5);
+						continue re;
+					}
+					else{
+						break;
+					}
+					//******************************
+				}
+				//****************
+				
+				}
+				//*********************
+				Thread.sleep(2000);
+				NotifyStub.sendPost("Load status for " + url[i], "From VM", "Info");
+				if(i!=(len-1))
+				{
+					s.type("t",Key.CTRL);
+				}
+			}
+			
+			NotifyStub.sendPost("Creating a new file for today", "From VM", "Info");
+			String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date()); 
+			String outFileName = "Output_"+timeStamp;
+			BufferedWriter bf = new BufferedWriter(new FileWriter("C:\\Users\\MPAGuest\\Desktop\\Output\\" + outFileName + ".txt")); 
+			
+			NotifyStub.sendPost("Writing into file : " + outFileName, "From VM", "Info");
+			for(int i = 0; i<=(len-1); i++)
+			{
+				bf.write(url[i]);
+				bf.newLine();
+			}
+			bf.close();
+        }
+        catch(Exception e){
+        	String fileName = new SimpleDateFormat("yyyyMMddhhmmss'.png'").format(new Date());
+	        takePictureOfError("Error_" + fileName);
+        	c.Error(e.toString());
+        	
+        	NotifyStub.sendPost("try - catch msg : "+e.getMessage(), "From VM", "Error");
+        	NotifyStub.sendPost("There has been some error. The error has been captured in the log as well as a snapshot: \n\n" + (System.getProperty("user.dir") + "\\Errors\\" +  "Error_" + fileName).replace("\\", "\\\\"), "From VM", "error");
+       	    //NotifyStub.sendPostWithImage("There has been some error. The error has been captured in the log as well as a snapshot:", "ERROR: From VM", "Error_" + fileName);
+        }finally {
+        	try {        		
+        		       		
+        		String ts = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date()); 
+        		String finalFileName = "OutputFinal_"+ts;   		
+        		
+        		BufferedWriter bfFinal = new BufferedWriter(new FileWriter("C:\\Users\\MPAGuest\\Desktop\\Output\\" + finalFileName + ".txt")); 
+        		
+        		NotifyStub.sendPost("Writing final status into file : " + finalFileName, "From VM", "Info");
+    			for(int i = 0; i<=(len-1); i++)
+    			{
+    				bfFinal.write(url[i]);
+    				bfFinal.newLine();
+    			}
+    			bfFinal.close();
+    			
+    			s.click(GetPath("gc_close.png"));
+        	}
+        	catch(Exception e){
+            	String fileName = new SimpleDateFormat("yyyyMMddhhmmss'.png'").format(new Date());
+    	        takePictureOfError("Error_" + fileName);
+            	c.Error(e.toString());
+            	
+            	NotifyStub.sendPost("Final - catch : " + e.getMessage(), "From VM", "Error");
+        	}
+        	finally {
+    		Thread.sleep(10000);
+    		NotifyStub.sendPost("Stop", "From VM", "Run Status");
+    		return;
+        	}
+    	}
+	}
+	
+	private static String GetPath(String fileName)
+	{
+		String path = System.getProperty("user.dir") + "\\imgs\\" + fileName;
+		c.Info("Request to get the path of file: " + fileName);
+		c.Info("Returning path: " + path);
+		return path;
+	}
+	
+	public static void takePictureOfError(String FileName)// throws IOException, AWTException
+	{
+		try
+		{
+			new File("Errors").mkdir();
+			FileName = System.getProperty("user.dir") + "\\Errors\\" +  FileName;
+			Toolkit toolkit = Toolkit.getDefaultToolkit();
+			Dimension screenSize = toolkit.getScreenSize();
+			Rectangle screenRect = new Rectangle(screenSize);
+			Robot robot = new Robot();
+			BufferedImage image = robot.createScreenCapture(screenRect);
+			boolean result = ImageIO.write(image, "png", new File(FileName));
+			if(result)
+				c.Info(FileName + " file has the snapshot");
+			else
+				c.Error("Error while trying to save " + FileName + " file.");
+		}
+		catch(Exception e)
+		{
+			c.Error(e.getMessage());
+		}
+	}
+}
